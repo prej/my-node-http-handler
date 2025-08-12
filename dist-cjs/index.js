@@ -65,11 +65,14 @@ var timing = {
 // src/set-connection-timeout.ts
 var DEFER_EVENT_LISTENER_TIME = 1e3;
 var setConnectionTimeout = /* @__PURE__ */ __name((request, reject, timeoutInMs = 0) => {
+  console.log(`smithy debug log - setConnectionTimeout - ${timeoutInMs} ms`);
   if (!timeoutInMs) {
     return -1;
   }
   const registerTimeout = /* @__PURE__ */ __name((offset) => {
+    console.log(`smithy debug log - setConnectionTimeout - registerTimeout: ${timeoutInMs} ms, offset: ${offset} ms`);
     const timeoutId = timing.setTimeout(() => {
+      console.log(`smithy debug log - setConnectionTimeout - destroying request due to timeout`);
       request.destroy();
       reject(
         Object.assign(new Error(`Socket timed out without establishing a connection within ${timeoutInMs} ms`), {
@@ -78,6 +81,7 @@ var setConnectionTimeout = /* @__PURE__ */ __name((request, reject, timeoutInMs 
       );
     }, timeoutInMs - offset);
     const doWithSocket = /* @__PURE__ */ __name((socket) => {
+      console.log(`smithy debug log - setConnectionTimeout - doWithSocket: ${socket?.connecting ? "connecting" : "already connected"}`);
       if (socket?.connecting) {
         socket.on("connect", () => {
           timing.clearTimeout(timeoutId);
@@ -93,6 +97,7 @@ var setConnectionTimeout = /* @__PURE__ */ __name((request, reject, timeoutInMs 
     }
   }, "registerTimeout");
   if (timeoutInMs < 2e3) {
+    console.log(`smithy debug log - setConnectionTimeout - registerTimeout with 0 offset`);
     registerTimeout(0);
     return 0;
   }
@@ -102,10 +107,12 @@ var setConnectionTimeout = /* @__PURE__ */ __name((request, reject, timeoutInMs 
 // src/set-socket-keep-alive.ts
 var DEFER_EVENT_LISTENER_TIME2 = 3e3;
 var setSocketKeepAlive = /* @__PURE__ */ __name((request, { keepAlive, keepAliveMsecs }, deferTimeMs = DEFER_EVENT_LISTENER_TIME2) => {
+  console.log(`smithy debug log - setSocketKeepAlive - keepAlive=${keepAlive}, keepAliveMsecs=${keepAliveMsecs}, deferTimeMs=${deferTimeMs}`);
   if (keepAlive !== true) {
     return -1;
   }
   const registerListener = /* @__PURE__ */ __name(() => {
+    console.log(`smithy debug log - setSocketKeepAlive - registerListener ${request.socket ? "with existing socket" : "without existing socket"}`);
     if (request.socket) {
       request.socket.setKeepAlive(keepAlive, keepAliveMsecs || 0);
     } else {
@@ -115,6 +122,7 @@ var setSocketKeepAlive = /* @__PURE__ */ __name((request, { keepAlive, keepAlive
     }
   }, "registerListener");
   if (deferTimeMs === 0) {
+    console.log(`smithy debug log - setSocketKeepAlive - registerListener with 0 deferTimeMs`);
     registerListener();
     return 0;
   }
@@ -124,12 +132,16 @@ var setSocketKeepAlive = /* @__PURE__ */ __name((request, { keepAlive, keepAlive
 // src/set-socket-timeout.ts
 var DEFER_EVENT_LISTENER_TIME3 = 3e3;
 var setSocketTimeout = /* @__PURE__ */ __name((request, reject, timeoutInMs = DEFAULT_REQUEST_TIMEOUT) => {
+  console.log(`smithy debug log - setSocketTimeout: ${timeoutInMs} ms`);
   const registerTimeout = /* @__PURE__ */ __name((offset) => {
+    console.log(`smithy debug log - setSocketTimeout - registerTimeout: ${timeoutInMs} ms, offset: ${offset} ms`);
     const timeout = timeoutInMs - offset;
     const onTimeout = /* @__PURE__ */ __name(() => {
+      console.log(`smithy debug log - setSocketTimeout - destroying request due to timeout`);
       request.destroy();
       reject(Object.assign(new Error(`Connection timed out after ${timeoutInMs} ms`), { name: "TimeoutError" }));
     }, "onTimeout");
+    console.log(`smithy debug log - setSocketTimeout - ${request.socket ? "with existing socket" : "without existing socket"}`);
     if (request.socket) {
       request.socket.setTimeout(timeout, onTimeout);
       request.on("close", () => request.socket?.removeListener("timeout", onTimeout));
@@ -138,6 +150,7 @@ var setSocketTimeout = /* @__PURE__ */ __name((request, reject, timeoutInMs = DE
     }
   }, "registerTimeout");
   if (0 < timeoutInMs && timeoutInMs < 6e3) {
+    console.log(`smithy debug log - setSocketTimeout - registerTimeout with 0 offset`);
     registerTimeout(0);
     return 0;
   }
@@ -270,6 +283,7 @@ or increase socketAcquisitionWarningTimeout=(millis) in the NodeHttpHandler conf
     const { requestTimeout, connectionTimeout, socketTimeout, socketAcquisitionWarningTimeout, httpAgent, httpsAgent } = options || {};
     const keepAlive = true;
     const maxSockets = 50;
+    console.log(`smithy debug log - NodeHttpHandler - requestTimeout: ${requestTimeout}, connectionTimeout: ${connectionTimeout}, socketTimeout: ${socketTimeout}, socketAcquisitionWarningTimeout: ${socketAcquisitionWarningTimeout}`);
     return {
       connectionTimeout,
       requestTimeout: requestTimeout ?? socketTimeout,
@@ -395,6 +409,7 @@ or increase socketAcquisitionWarningTimeout=(millis) in the NodeHttpHandler conf
         }
       }
       const effectiveRequestTimeout = requestTimeout ?? this.config.requestTimeout;
+      console.log(`smithy debug log - NodeHttpHandler - effectiveRequestTimeout: ${effectiveRequestTimeout} ms, requestTimeOut: ${this.config.requestTimeout}, connectionTimeout: ${this.config.connectionTimeout} ms`);
       timeouts.push(setConnectionTimeout(req, reject, this.config.connectionTimeout));
       timeouts.push(setSocketTimeout(req, reject, effectiveRequestTimeout));
       const httpAgent = nodeHttpsOptions.agent;
