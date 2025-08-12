@@ -72,7 +72,7 @@ var setConnectionTimeout = /* @__PURE__ */ __name((request, reject, timeoutInMs 
   const registerTimeout = /* @__PURE__ */ __name((offset) => {
     console.log(`smithy debug log - setConnectionTimeout - registerTimeout: ${timeoutInMs} ms, offset: ${offset} ms`);
     const timeoutId = timing.setTimeout(() => {
-      console.log(`smithy debug log - setConnectionTimeout - destroying request due to timeout`);
+      console.log(`smithy debug log - setConnectionTimeout - destroying request due to timeout, request: ${JSON.stringify(request)} `);
       request.destroy();
       reject(
         Object.assign(new Error(`Socket timed out without establishing a connection within ${timeoutInMs} ms`), {
@@ -137,7 +137,7 @@ var setSocketTimeout = /* @__PURE__ */ __name((request, reject, timeoutInMs = DE
     console.log(`smithy debug log - setSocketTimeout - registerTimeout: ${timeoutInMs} ms, offset: ${offset} ms`);
     const timeout = timeoutInMs - offset;
     const onTimeout = /* @__PURE__ */ __name(() => {
-      console.log(`smithy debug log - setSocketTimeout - destroying request due to timeout`);
+      console.log(`smithy debug log - setSocketTimeout - destroying request due to timeout, request: ${JSON.stringify(request)}`);
       request.destroy();
       reject(Object.assign(new Error(`Connection timed out after ${timeoutInMs} ms`), { name: "TimeoutError" }));
     }, "onTimeout");
@@ -395,6 +395,7 @@ or increase socketAcquisitionWarningTimeout=(millis) in the NodeHttpHandler conf
       });
       if (abortSignal) {
         const onAbort = /* @__PURE__ */ __name(() => {
+          console.log(`smithy debug log - NodeHttpHandler - request aborted, request: ${JSON.stringify(request)}`);
           req.destroy();
           const abortError = new Error("Request aborted");
           abortError.name = "AbortError";
@@ -481,6 +482,7 @@ var NodeHttp2ConnectionPool = class {
     for (const session of this.sessions) {
       if (session === connection) {
         if (!session.destroyed) {
+          console.log(`smithy debug log - NodeHttp2ConnectionPool - destroying session: ${JSON.stringify(session)}`);
           session.destroy();
         }
       }
@@ -521,6 +523,7 @@ var NodeHttp2ConnectionManager = class {
     }
     session.unref();
     const destroySessionCb = /* @__PURE__ */ __name(() => {
+      console.log(`smithy debug log - NodeHttp2ConnectionManager - destroying session: ${JSON.stringify(session)}`);
       session.destroy();
       this.deleteSession(url, session);
     }, "destroySessionCb");
