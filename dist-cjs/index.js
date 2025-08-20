@@ -132,6 +132,7 @@ var setSocketTimeout = /* @__PURE__ */ __name((request, reject, timeoutInMs = DE
     const timeout = timeoutInMs - offset;
     const onTimeout = /* @__PURE__ */ __name(() => {
       console.log(`smithy debug log - setSocketTimeout - destroying request due to timeout, request: ${request}`);
+      console.log(`method: ${request.method}, header: ${JSON.stringify(request._header)}, host: ${request.host}, protocol: ${request.protocol}`);
       request.destroy();
       reject(Object.assign(new Error(`Connection timed out after ${timeoutInMs} ms`), { name: "TimeoutError" }));
     }, "onTimeout");
