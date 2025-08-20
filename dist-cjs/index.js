@@ -71,7 +71,7 @@ var setConnectionTimeout = /* @__PURE__ */ __name((request, reject, timeoutInMs 
   const registerTimeout = /* @__PURE__ */ __name((offset) => {
     console.log(`smithy debug log - setConnectionTimeout - ${timeoutInMs} ms, offset: ${offset} ms`);
     const timeoutId = timing.setTimeout(() => {
-      console.log(`smithy debug log - setConnectionTimeout - destroying request due to timeout, request: ${JSON.stringify(request)} `);
+      console.log(`smithy debug log - setConnectionTimeout - destroying request due to timeout, request: ${request} `);
       request.destroy();
       reject(
         Object.assign(new Error(`Socket timed out without establishing a connection within ${timeoutInMs} ms`), {
@@ -130,7 +130,7 @@ var setSocketTimeout = /* @__PURE__ */ __name((request, reject, timeoutInMs = DE
     console.log(`smithy debug log - setSocketTimeout - ${timeoutInMs} ms, offset: ${offset} ms`);
     const timeout = timeoutInMs - offset;
     const onTimeout = /* @__PURE__ */ __name(() => {
-      console.log(`smithy debug log - setSocketTimeout - destroying request due to timeout, request: ${JSON.stringify(request)}`);
+      console.log(`smithy debug log - setSocketTimeout - destroying request due to timeout, request: ${request}`);
       request.destroy();
       reject(Object.assign(new Error(`Connection timed out after ${timeoutInMs} ms`), { name: "TimeoutError" }));
     }, "onTimeout");
